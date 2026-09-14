@@ -1,0 +1,17 @@
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('Manrope-Variable.woff2') format('woff2-variations'),
+       url('Manrope-Variable.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('JetBrainsMono-Variable.woff2') format('woff2-variations'),
+       url('JetBrainsMono-Variable.woff2') format('woff2');
+}

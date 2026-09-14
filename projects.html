@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Projects | Mayank Hooda</title>
+<meta name="description" content="Public repositories from Mayank Hooda: SOC log analysis, reconnaissance automation, Wazuh HA infrastructure, and security lab writeups. Source code and live demos where they exist.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22><rect width=%22256%22 height=%22256%22 rx=%2256%22 fill=%22%232f6690%22/><path fill=%22%23fff%22 d=%22M208,40H48A16,16,0,0,0,32,56v56c0,52.72,25.52,84.67,46.93,102.19,23.06,18.86,46,25.26,47,25.53a8,8,0,0,0,4.2,0c1-.27,23.91-6.67,47-25.53C198.48,196.67,224,164.72,224,112V56A16,16,0,0,0,208,40Zm0,72c0,37.07-13.66,67.16-40.6,89.42A129.3,129.3,0,0,1,128,223.62a128.25,128.25,0,0,1-38.92-21.81C61.82,179.51,48,149.3,48,112l0-56,160,0ZM82.34,141.66a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32l-56,56a8,8,0,0,1-11.32,0Z%22/></svg>">
+<link rel="stylesheet" href="assets/css/style.css?v=5">
+<script>(function(){try{var t=localStorage.getItem("mh-theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();</script>
+</head>
+<body>
+
+<div class="bg-field" aria-hidden="true">
+  <span class="bg-grid"></span>
+  <span class="bg-blob bg-blob-a"></span>
+  <span class="bg-blob bg-blob-b"></span>
+  <div class="bg-network"></div>
+</div>
+<div class="cursor-ring" aria-hidden="true"></div>
+
+<header class="site-nav">
+  <div class="container nav-inner">
+    <a href="index.html" class="brand">
+      <span class="icon" style="--icon-url:url('../icons/shield-check.svg')" aria-hidden="true"></span>
+      Mayank Hooda
+    </a>
+    <nav class="nav-links" id="navLinks" aria-label="Primary">
+      <a href="index.html">Home</a>
+      <a href="projects.html" aria-current="page">Projects</a>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="icon-btn" id="themeToggle" aria-label="Toggle color theme">
+        <span class="icon icon-moon" style="--icon-url:url('../icons/moon.svg')" aria-hidden="true"></span>
+        <span class="icon icon-sun" style="--icon-url:url('../icons/sun.svg')" aria-hidden="true"></span>
+      </button>
+      <button class="nav-toggle" id="navToggle" aria-label="Open menu" aria-expanded="false" aria-controls="navLinks">
+        <span class="icon" style="--icon-url:url('../icons/list.svg')" aria-hidden="true"></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="container page-header">
+    <h1 class="hero-fade" data-hero-reveal>Projects</h1>
+    <p class="lede hero-fade" data-hero-reveal>Every public repository worth showing: SIEM tooling, reconnaissance automation, and the infrastructure automation behind the CyberSIO deployment. Source code always linked; a live demo link only where one genuinely exists.</p>
+  </section>
+
+  <section class="container section-tight">
+    <div class="project-grid cols-2" id="all-projects"></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <p>&copy; <span id="year"></span> Mayank Hooda. Built with plain HTML, CSS, and JavaScript.</p>
+    <div class="footer-links">
+      <a href="assets/files/Mayank-Hooda-Resume.pdf" target="_blank" rel="noopener">
+        <span class="icon" style="--icon-url:url('../icons/file-pdf.svg')" aria-hidden="true"></span> Resume
+      </a>
+      <a href="https://github.com/Marky3012" target="_blank" rel="noopener">
+        <span class="icon" style="--icon-url:url('../icons/github-logo.svg')" aria-hidden="true"></span> GitHub
+      </a>
+      <a href="https://linkedin.com/in/mayank-hooda/" target="_blank" rel="noopener">
+        <span class="icon" style="--icon-url:url('../icons/linkedin-logo.svg')" aria-hidden="true"></span> LinkedIn
+      </a>
+      <a href="mailto:marky.hooda@gmail.com">
+        <span class="icon" style="--icon-url:url('../icons/envelope-simple.svg')" aria-hidden="true"></span> Email
+      </a>
+    </div>
+  </div>
+</footer>
+
+<script src="assets/js/projects-data.js?v=5"></script>
+<script src="assets/js/main.js?v=5"></script>
+</body>
+</html>

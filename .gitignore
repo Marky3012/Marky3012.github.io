@@ -1,0 +1,17 @@
+# Local tooling / scratch, not part of the published site
+.claude/
+.impeccable/
+.playwright-mcp/
+.venv/
+markitdown/
+*.zip
+humanscope.skill
+PRODUCT.md
+DESIGN.md
+
+# Source material already bundled into assets/files/
+Resume.md
+Mayank-Hooda-FlowCV-Resume-2025111.pdf
+
+.DS_Store
+Thumbs.db
