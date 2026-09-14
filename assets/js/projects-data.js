@@ -34,6 +34,17 @@ window.PROJECTS = [
     featured: true
   },
   {
+    id: "postgres-ha-cluster",
+    name: "PostgreSQL HA Cluster",
+    tagline: "4-node Patroni and etcd cluster, deployed and validated",
+    description: "An orchestrator that stands up a 4-node PostgreSQL 17 cluster with Patroni-managed streaming replication and an etcd quorum watcher, paired with an end-to-end validation framework covering failover, failback, disaster recovery, and RTO/RPO compliance with JSON, HTML, and PDF reports.",
+    stack: ["Python", "PostgreSQL", "Patroni", "etcd"],
+    repo: "https://github.com/Marky3012/postgres-ha-patroni-",
+    demo: "https://marky3012.github.io/postgres-ha-patroni-/",
+    thumb: "assets/img/postgres-ha-live-screenshot.png",
+    featured: true
+  },
+  {
     id: "security-lab-reports",
     name: "Security Lab Reports",
     tagline: "TryHackMe and VulnHub writeups, in one place",
@@ -42,7 +53,7 @@ window.PROJECTS = [
     repo: "https://github.com/Marky3012/Personal-Reports",
     demo: null,
     thumb: null,
-    featured: true
+    featured: false
   },
   {
     id: "linux-essentials",

@@ -41,6 +41,7 @@
       } catch (e) {
         /* ignore */
       }
+      if (window.__refreshBgNetworkColor) window.__refreshBgNetworkColor();
     });
   }
 
@@ -231,12 +232,281 @@
     window.requestAnimationFrame(loop);
   }
 
-  /* ---------- Animated network topology (cybersecurity-themed backdrop) ----------
-     A monitored-node graph: circles are endpoints, lines are the network,
-     rings ping outward from each node (an endpoint reporting in), and small
-     packets travel a subset of edges (log/telemetry flow). Built once as an
-     SVG string and injected into every page's .bg-network container. */
-  var BGN_NODES = [
+  /* ---------- Background style system (cybersecurity-themed backdrops) ----------
+     More than one visual for the .bg-network canvas/SVG layer, switchable at
+     runtime and persisted in localStorage, independent of the light/dark
+     color theme. Each entry is a "mount(container, reduce) -> {stop,
+     refreshColor}" function: mount builds and starts the visual, stop tears
+     down whatever it added (timers, listeners, DOM), refreshColor re-reads
+     the current --accent when the color theme flips. Adding a new backdrop
+     later is just one more entry in BG_THEMES; nothing else needs to change. */
+
+  /* ---- Theme: "dynamic" -- drifting particle mesh with routed, pulsating
+     messages that occasionally get denied (the current default). ---- */
+  function mountDynamicBg(mount, reduce) {
+    var canvas = document.createElement("canvas");
+    mount.appendChild(canvas);
+    var ctx = canvas.getContext("2d");
+    if (!ctx) return { stop: function () {}, refreshColor: function () {} };
+
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var width = 0, height = 0, linkDist = 140;
+    var REPEL_DIST = 130, REPEL_FORCE = 1.9;
+    var particles = [];
+    var mouse = { x: -9999, y: -9999 };
+    var rgb = "58,102,144";
+    var deniedRgb = "196,90,90";
+    var frameT = 0;
+
+    /* Messages hop node to node like routed packets: each arrival rolls a
+       chance of denial (turns red, drops there) or continues to a new
+       neighbor, up to MAX_HOPS before it simply expires (TTL exceeded). */
+    var messages = [], bursts = [];
+    var MAX_MESSAGES = 22, MAX_HOPS = 256, DENY_CHANCE = 0.05;
+
+    function readColor() {
+      var raw = getComputedStyle(document.documentElement).getPropertyValue("--accent").trim();
+      var hex = raw.replace("#", "");
+      if (hex.length === 3) hex = hex.split("").map(function (c) { return c + c; }).join("");
+      var num = parseInt(hex, 16);
+      if (!isNaN(num) && hex.length === 6) {
+        rgb = ((num >> 16) & 255) + "," + ((num >> 8) & 255) + "," + (num & 255);
+      }
+    }
+    readColor();
+
+    function seed() {
+      var count = Math.max(46, Math.min(140, Math.round((width * height) / 12000)));
+      particles = [];
+      for (var i = 0; i < count; i++) {
+        particles.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: (Math.random() - 0.5) * 0.3,
+          r: 1.1 + Math.random() * 2.1
+        });
+      }
+    }
+
+    function sizeCanvas() {
+      width = mount.clientWidth;
+      height = mount.clientHeight;
+      canvas.width = Math.max(1, Math.round(width * dpr));
+      canvas.height = Math.max(1, Math.round(height * dpr));
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      linkDist = Math.max(160, Math.min(300, width / 5.5));
+    }
+
+    sizeCanvas();
+    seed();
+
+    function pickNeighbor(idx, excludeIdx) {
+      var candidates = [];
+      var pi = particles[idx];
+      for (var k = 0; k < particles.length; k++) {
+        if (k === idx || k === excludeIdx || !particles[k]) continue;
+        var dx = particles[k].x - pi.x, dy = particles[k].y - pi.y;
+        if (Math.sqrt(dx * dx + dy * dy) < linkDist) candidates.push(k);
+      }
+      if (candidates.length) return candidates[Math.floor(Math.random() * candidates.length)];
+      var r = idx, tries = 0;
+      while ((r === idx || r === excludeIdx) && tries < 10) {
+        r = Math.floor(Math.random() * particles.length);
+        tries++;
+      }
+      return r;
+    }
+
+    function spawnMessage() {
+      if (reduce || particles.length < 2 || messages.length >= MAX_MESSAGES) return;
+      var from = Math.floor(Math.random() * particles.length);
+      var to = pickNeighbor(from, -1);
+      if (to !== from && to !== -1) {
+        messages.push({ from: from, to: to, t: 0, hops: 0, speed: 0.008 + Math.random() * 0.012 });
+      }
+    }
+
+    var spawnTimer = null;
+    function scheduleSpawn() {
+      spawnTimer = window.setTimeout(function () {
+        spawnMessage();
+        scheduleSpawn();
+      }, 260 + Math.random() * 380);
+    }
+
+    function drawMessages() {
+      var m, msg, pa, pb, mx, my, pulse;
+      for (m = messages.length - 1; m >= 0; m--) {
+        msg = messages[m];
+        pa = particles[msg.from];
+        pb = particles[msg.to];
+        if (!pa || !pb) { messages.splice(m, 1); continue; }
+
+        msg.t += msg.speed;
+        if (msg.t >= 1) {
+          msg.hops++;
+          if (msg.hops >= MAX_HOPS) {
+            bursts.push({ x: pb.x, y: pb.y, age: 0, max: 0.5, r: 9, color: "accent" });
+            messages.splice(m, 1);
+            continue;
+          }
+          if (Math.random() < DENY_CHANCE) {
+            bursts.push({ x: pb.x, y: pb.y, age: 0, max: 0.65, r: 15, color: "denied" });
+            messages.splice(m, 1);
+            continue;
+          }
+          var next = pickNeighbor(msg.to, msg.from);
+          msg.from = msg.to;
+          msg.to = next;
+          msg.t = 0;
+          msg.speed = 0.008 + Math.random() * 0.012;
+          pa = particles[msg.from];
+          pb = particles[msg.to];
+          if (!pa || !pb) { messages.splice(m, 1); continue; }
+        }
+
+        mx = pa.x + (pb.x - pa.x) * msg.t;
+        my = pa.y + (pb.y - pa.y) * msg.t;
+        pulse = 1.7 + Math.sin(frameT * 0.22 + m) * 0.9;
+
+        ctx.beginPath();
+        ctx.arc(mx, my, pulse, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(" + rgb + ",0.9)";
+        ctx.shadowColor = "rgba(" + rgb + ",0.75)";
+        ctx.shadowBlur = 6;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      for (var b = bursts.length - 1; b >= 0; b--) {
+        var burst = bursts[b];
+        burst.age += 0.045;
+        if (burst.age >= burst.max) { bursts.splice(b, 1); continue; }
+        var pct = burst.age / burst.max;
+        var col = burst.color === "denied" ? deniedRgb : rgb;
+        ctx.beginPath();
+        ctx.arc(burst.x, burst.y, burst.r * pct, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(" + col + "," + (0.6 * (1 - pct)).toFixed(3) + ")";
+        ctx.lineWidth = 1.4;
+        ctx.stroke();
+      }
+    }
+
+    function drawFrame() {
+      frameT++;
+      ctx.clearRect(0, 0, width, height);
+      var i, a, b, dx, dy, dist;
+
+      for (i = 0; i < particles.length; i++) {
+        a = particles[i];
+        if (!reduce) {
+          a.x += a.vx;
+          a.y += a.vy;
+
+          dx = a.x - mouse.x;
+          dy = a.y - mouse.y;
+          dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < REPEL_DIST) {
+            var force = (1 - dist / REPEL_DIST) * REPEL_FORCE;
+            var inv = 1 / (dist || 1);
+            a.x += dx * inv * force;
+            a.y += dy * inv * force;
+          }
+
+          if (a.x < -20) a.x = width + 20;
+          if (a.x > width + 20) a.x = -20;
+          if (a.y < -20) a.y = height + 20;
+          if (a.y > height + 20) a.y = -20;
+        }
+      }
+
+      for (i = 0; i < particles.length; i++) {
+        for (var j = i + 1; j < particles.length; j++) {
+          a = particles[i];
+          b = particles[j];
+          dx = a.x - b.x;
+          dy = a.y - b.y;
+          dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < linkDist) {
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y);
+            ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = "rgba(" + rgb + "," + (0.16 * (1 - dist / linkDist)).toFixed(3) + ")";
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+      }
+
+      for (i = 0; i < particles.length; i++) {
+        a = particles[i];
+        ctx.beginPath();
+        ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(" + rgb + ",0.5)";
+        ctx.fill();
+      }
+
+      if (!reduce) drawMessages();
+    }
+
+    var rafId = null;
+    function loop() {
+      drawFrame();
+      rafId = window.requestAnimationFrame(loop);
+    }
+    function start() {
+      if (reduce) { drawFrame(); return; }
+      if (!rafId) rafId = window.requestAnimationFrame(loop);
+      if (!spawnTimer) scheduleSpawn();
+    }
+    function stopAnim() {
+      if (rafId) { window.cancelAnimationFrame(rafId); rafId = null; }
+      if (spawnTimer) { window.clearTimeout(spawnTimer); spawnTimer = null; }
+    }
+
+    function onResize() {
+      sizeCanvas();
+      seed();
+      messages = [];
+      bursts = [];
+      if (reduce) drawFrame();
+    }
+    function onPointerMove(e) {
+      var rect = mount.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+    }
+    function onMouseOut(e) {
+      if (!e.relatedTarget) { mouse.x = -9999; mouse.y = -9999; }
+    }
+    function onVisibility() {
+      if (document.hidden) stopAnim();
+      else start();
+    }
+
+    window.addEventListener("resize", onResize, { passive: true });
+    window.addEventListener("pointermove", onPointerMove, { passive: true });
+    document.addEventListener("mouseout", onMouseOut, { passive: true });
+    document.addEventListener("visibilitychange", onVisibility);
+
+    start();
+
+    return {
+      refreshColor: readColor,
+      stop: function () {
+        stopAnim();
+        window.removeEventListener("resize", onResize);
+        window.removeEventListener("pointermove", onPointerMove);
+        document.removeEventListener("mouseout", onMouseOut);
+        document.removeEventListener("visibilitychange", onVisibility);
+      }
+    };
+  }
+
+  /* ---- Theme: "classic" -- the original hand-placed constellation (static
+     layout, CSS/SMIL-driven pings and packets, no per-frame JS at all). ---- */
+  var BGN_NODES_CLASSIC = [
     { x: 120, y: 140, r: 3 }, { x: 340, y: 90, r: 2.5 }, { x: 560, y: 220, r: 3.5 },
     { x: 780, y: 60, r: 2 }, { x: 980, y: 180, r: 3 }, { x: 1200, y: 100, r: 2.5 },
     { x: 1420, y: 220, r: 3 }, { x: 60, y: 420, r: 2.5 }, { x: 300, y: 480, r: 3 },
@@ -245,7 +515,7 @@
     { x: 460, y: 760, r: 2.5 }, { x: 700, y: 680, r: 3 }, { x: 940, y: 760, r: 2 },
     { x: 1180, y: 700, r: 3.5 }, { x: 1420, y: 760, r: 2.5 }
   ];
-  var BGN_EDGES = [
+  var BGN_EDGES_CLASSIC = [
     [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6],
     [0, 7], [1, 8], [2, 9], [4, 11], [5, 12], [6, 13],
     [7, 8], [8, 9], [9, 10], [10, 11], [11, 12], [12, 13],
@@ -253,15 +523,15 @@
     [14, 15], [15, 16], [16, 17], [17, 18], [18, 19],
     [2, 10], [8, 16]
   ];
-  var BGN_PACKET_EDGES = [0, 4, 8, 12, 16, 20, 24, 28];
+  var BGN_PACKET_EDGES_CLASSIC = [0, 4, 8, 12, 16, 20, 24, 28];
 
-  function buildNetworkSVG(reduce) {
-    var edgesSVG = BGN_EDGES.map(function (e) {
-      var a = BGN_NODES[e[0]], b = BGN_NODES[e[1]];
+  function buildClassicNetworkSVG(reduce) {
+    var edgesSVG = BGN_EDGES_CLASSIC.map(function (e) {
+      var a = BGN_NODES_CLASSIC[e[0]], b = BGN_NODES_CLASSIC[e[1]];
       return '<line class="bgn-edge" x1="' + a.x + '" y1="' + a.y + '" x2="' + b.x + '" y2="' + b.y + '"/>';
     }).join("");
 
-    var nodesSVG = BGN_NODES.map(function (n, i) {
+    var nodesSVG = BGN_NODES_CLASSIC.map(function (n, i) {
       var ping = reduce
         ? ""
         : '<circle class="bgn-ping" cx="' + n.x + '" cy="' + n.y + '" r="' + n.r +
@@ -271,9 +541,9 @@
 
     var packetsSVG = reduce
       ? ""
-      : BGN_PACKET_EDGES.map(function (edgeIdx, i) {
-          var e = BGN_EDGES[edgeIdx % BGN_EDGES.length];
-          var a = BGN_NODES[e[0]], b = BGN_NODES[e[1]];
+      : BGN_PACKET_EDGES_CLASSIC.map(function (edgeIdx, i) {
+          var e = BGN_EDGES_CLASSIC[edgeIdx % BGN_EDGES_CLASSIC.length];
+          var a = BGN_NODES_CLASSIC[e[0]], b = BGN_NODES_CLASSIC[e[1]];
           var dur = 3.5 + (i % 4) * 0.8;
           var delay = i * 0.7;
           return (
@@ -291,11 +561,60 @@
     );
   }
 
-  function initBgNetwork() {
+  function mountClassicBg(mount, reduce) {
+    mount.innerHTML = buildClassicNetworkSVG(reduce);
+    /* Colors are plain CSS (var(--accent) on .bgn-*), so they already track
+       the light/dark toggle with no JS refresh needed. */
+    return { stop: function () {}, refreshColor: function () {} };
+  }
+
+  /* ---- Registry: add a new { id, label, mount } entry here for a future
+     backdrop. Nothing else in initBgTheme needs to change. ---- */
+  var BG_THEMES = [
+    { id: "dynamic", label: "Dynamic mesh", mount: mountDynamicBg },
+    { id: "classic", label: "Classic network", mount: mountClassicBg }
+  ];
+
+  function initBgTheme() {
     var mount = document.querySelector(".bg-network");
     if (!mount) return;
     var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    mount.innerHTML = buildNetworkSVG(reduce);
+    var btn = document.getElementById("bgThemeToggle");
+    var current = null;
+    var idx = 0;
+
+    var stored = null;
+    try {
+      stored = localStorage.getItem("mh-bg-theme");
+    } catch (e) {
+      /* private mode or blocked storage */
+    }
+    for (var i = 0; i < BG_THEMES.length; i++) {
+      if (BG_THEMES[i].id === stored) idx = i;
+    }
+
+    function activate(nextIdx) {
+      if (current && current.stop) current.stop();
+      mount.innerHTML = "";
+      idx = ((nextIdx % BG_THEMES.length) + BG_THEMES.length) % BG_THEMES.length;
+      var theme = BG_THEMES[idx];
+      current = theme.mount(mount, reduce) || {};
+      window.__refreshBgNetworkColor = current.refreshColor || function () {};
+      try {
+        localStorage.setItem("mh-bg-theme", theme.id);
+      } catch (e) {
+        /* ignore */
+      }
+      if (btn) btn.setAttribute("aria-label", "Background style: " + theme.label + ". Click to switch.");
+    }
+
+    if (btn) {
+      btn.addEventListener("click", function () {
+        activate(idx + 1);
+      });
+    }
+
+    activate(idx);
   }
 
   /* ---------- Ambient background drift (mouse drag or touch drag) ---------- */
@@ -487,7 +806,8 @@
   var ICON_BY_ID = {
     "soc-log-analyzer": "chart-line",
     "security-lab-reports": "certificate",
-    "linux-essentials": "terminal-window"
+    "linux-essentials": "terminal-window",
+    "postgres-ha-cluster": "database"
   };
 
   function renderProjects() {
@@ -520,7 +840,7 @@
     initReveal();
     initEntranceReveal();
     initCopy();
-    initBgNetwork();
+    initBgTheme();
     initBgField();
     initSpotlight();
     initTilt(".hero-tile", 6);
