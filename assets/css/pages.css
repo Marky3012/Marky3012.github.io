@@ -196,3 +196,20 @@
   .resume-block { padding: 12px 0; }
   a { color: inherit; text-decoration: none; }
 }
+
+/* ---------- Human touches: photo slot, "right now", principles ---------- */
+.resume-photo {
+  width: 64px; height: 64px; border-radius: 18px; object-fit: cover; margin-bottom: 16px;
+  box-shadow: var(--shadow-raised);
+}
+.resume-photo:not([hidden]) + .resume-avatar { display: none; }
+.now-panel { display: flex; gap: 14px; align-items: flex-start; padding: 18px 22px; margin-bottom: 18px; }
+.now-panel strong { font-size: 0.8rem; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent-strong); }
+.now-panel p { margin-top: 4px; font-size: 0.94rem; }
+.now-dot { flex: none; width: 9px; height: 9px; margin-top: 6px; border-radius: 50%; background: var(--accent); animation: pulse-dot 1.8s ease-in-out infinite; }
+.principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.principle { padding: 26px; }
+.principle .pn { color: var(--accent); font-size: 0.8rem; }
+.principle h3 { margin: 8px 0; font-size: 1.05rem; }
+.principle p { font-size: 0.92rem; }
+@media (max-width: 900px) { .principles { grid-template-columns: 1fr; } }
