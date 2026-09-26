@@ -433,7 +433,7 @@ p { color: var(--ink-muted); }
 }
 .nav-toggle { display: none; }
 
-@media (max-width: 760px) {
+@media (max-width: 1080px) {
   .nav-toggle {
     display: inline-flex;
     align-items: center;
