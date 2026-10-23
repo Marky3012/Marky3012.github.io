@@ -73,7 +73,7 @@
         })
       : [el];
     var idx = siblings.indexOf(el);
-    return Math.min(idx < 0 ? 0 : idx, 5);
+    return Math.min(idx < 0 ? 0 : idx, 3);
   }
 
   function initReveal() {
@@ -91,13 +91,13 @@
         entries.forEach(function (entry) {
           if (entry.isIntersecting) {
             var el = entry.target;
-            el.style.transitionDelay = staggerIndex(el, "data-reveal") * 70 + "ms";
+            el.style.transitionDelay = staggerIndex(el, "data-reveal") * 45 + "ms";
             el.classList.add("is-raised");
             io.unobserve(el);
           }
         });
       },
-      { threshold: 0.2, rootMargin: "0px 0px -40px 0px" }
+      { threshold: 0, rootMargin: "0px 0px 12% 0px" }
     );
     panels.forEach(function (p) {
       io.observe(p);
@@ -124,6 +124,19 @@
   }
 
   /* ---------- Nav gains depth once the page scrolls ---------- */
+  function initScrollFlag() {
+    var t = 0;
+    window.addEventListener(
+      "scroll",
+      function () {
+        window.__mhScrolling = true;
+        window.clearTimeout(t);
+        t = window.setTimeout(function () { window.__mhScrolling = false; }, 140);
+      },
+      { passive: true }
+    );
+  }
+
   function initNavScroll() {
     var nav = document.querySelector(".site-nav");
     if (!nav) return;
@@ -249,7 +262,7 @@
     var ctx = canvas.getContext("2d");
     if (!ctx) return { stop: function () {}, refreshColor: function () {} };
 
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var dpr = Math.min(window.devicePixelRatio || 1, 1.5);
     var width = 0, height = 0, linkDist = 140;
     var REPEL_DIST = 130, REPEL_FORCE = 1.9;
     var particles = [];
@@ -276,7 +289,7 @@
     readColor();
 
     function seed() {
-      var count = Math.max(46, Math.min(140, Math.round((width * height) / 12000)));
+      var count = Math.max(34, Math.min(80, Math.round((width * height) / 20000)));
       particles = [];
       for (var i = 0; i < count; i++) {
         particles.push({
@@ -373,10 +386,7 @@
         ctx.beginPath();
         ctx.arc(mx, my, pulse, 0, Math.PI * 2);
         ctx.fillStyle = "rgba(" + rgb + ",0.9)";
-        ctx.shadowColor = "rgba(" + rgb + ",0.75)";
-        ctx.shadowBlur = 6;
         ctx.fill();
-        ctx.shadowBlur = 0;
       }
 
       for (var b = bursts.length - 1; b >= 0; b--) {
@@ -421,22 +431,25 @@
         }
       }
 
-      for (i = 0; i < particles.length; i++) {
-        for (var j = i + 1; j < particles.length; j++) {
-          a = particles[i];
-          b = particles[j];
-          dx = a.x - b.x;
-          dy = a.y - b.y;
-          dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < linkDist) {
-            ctx.beginPath();
-            ctx.moveTo(a.x, a.y);
-            ctx.lineTo(b.x, b.y);
-            ctx.strokeStyle = "rgba(" + rgb + "," + (0.16 * (1 - dist / linkDist)).toFixed(3) + ")";
-            ctx.lineWidth = 1;
-            ctx.stroke();
+      var BUCKETS = 4, linkSq = linkDist * linkDist, bk;
+      for (bk = 0; bk < BUCKETS; bk++) {
+        ctx.beginPath();
+        for (i = 0; i < particles.length; i++) {
+          for (var j = i + 1; j < particles.length; j++) {
+            a = particles[i];
+            b = particles[j];
+            dx = a.x - b.x;
+            dy = a.y - b.y;
+            dist = dx * dx + dy * dy;
+            if (dist < linkSq && Math.min(BUCKETS - 1, ((1 - dist / linkSq) * BUCKETS) | 0) === bk) {
+              ctx.moveTo(a.x, a.y);
+              ctx.lineTo(b.x, b.y);
+            }
           }
         }
+        ctx.strokeStyle = "rgba(" + rgb + "," + (0.16 * (bk + 0.5) / BUCKETS).toFixed(3) + ")";
+        ctx.lineWidth = 1;
+        ctx.stroke();
       }
 
       for (i = 0; i < particles.length; i++) {
@@ -451,9 +464,12 @@
     }
 
     var rafId = null;
-    function loop() {
-      drawFrame();
+    var lastDraw = 0;
+    function loop(now) {
       rafId = window.requestAnimationFrame(loop);
+      if (window.__mhScrolling || now - lastDraw < 25) return;
+      lastDraw = now;
+      drawFrame();
     }
     function start() {
       if (reduce) { drawFrame(); return; }
@@ -473,9 +489,8 @@
       if (reduce) drawFrame();
     }
     function onPointerMove(e) {
-      var rect = mount.getBoundingClientRect();
-      mouse.x = e.clientX - rect.left;
-      mouse.y = e.clientY - rect.top;
+      mouse.x = e.clientX;
+      mouse.y = e.clientY;
     }
     function onMouseOut(e) {
       if (!e.relatedTarget) { mouse.x = -9999; mouse.y = -9999; }
@@ -620,7 +635,8 @@
   /* ---------- Ambient background drift (mouse drag or touch drag) ---------- */
   function initBgField() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    var root = document.documentElement;
+    var root = document.querySelector(".bg-field");
+    if (!root) return;
     var raf = null;
     function apply(x, y) {
       if (raf) return;
@@ -647,10 +663,15 @@
     if (!window.PointerEvent) return;
     var active = null;
 
+    var placeRaf = 0;
     function place(panel, x, y) {
-      var rect = panel.getBoundingClientRect();
-      panel.style.setProperty("--mx", ((x - rect.left) / rect.width) * 100 + "%");
-      panel.style.setProperty("--my", ((y - rect.top) / rect.height) * 100 + "%");
+      if (placeRaf) return;
+      placeRaf = window.requestAnimationFrame(function () {
+        placeRaf = 0;
+        var rect = panel.getBoundingClientRect();
+        panel.style.setProperty("--mx", ((x - rect.left) / rect.width) * 100 + "%");
+        panel.style.setProperty("--my", ((y - rect.top) / rect.height) * 100 + "%");
+      });
     }
 
     document.addEventListener(
@@ -840,6 +861,7 @@
     initReveal();
     initEntranceReveal();
     initCopy();
+    initScrollFlag();
     initBgTheme();
     initBgField();
     initSpotlight();

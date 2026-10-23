@@ -6,8 +6,9 @@
 <title>Mayank Hooda | SOC Engineer</title>
 <meta name="description" content="Mayank Hooda is a SOC Engineer deploying Wazuh SIEM, PAM, and automated failover infrastructure across critical government sites. Real projects, real repositories.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 256 256%22><rect width=%22256%22 height=%22256%22 rx=%2056%22 fill=%22%232f6690%22/><path fill=%22%23fff%22 d=%22M208,40H48A16,16,0,0,0,32,56v56c0,52.72,25.52,84.67,46.93,102.19,23.06,18.86,46,25.26,47,25.53a8,8,0,0,0,4.2,0c1-.27,23.91-6.67,47-25.53C198.48,196.67,224,164.72,224,112V56A16,16,0,0,0,208,40Zm0,72c0,37.07-13.66,67.16-40.6,89.42A129.3,129.3,0,0,1,128,223.62a128.25,128.25,0,0,1-38.92-21.81C61.82,179.51,48,149.3,48,112l0-56,160,0ZM82.34,141.66a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32l-56,56a8,8,0,0,1-11.32,0Z%22/></svg>">
-<link rel="stylesheet" href="assets/css/style.css?v=7">
-<script>(function(){try{var t=localStorage.getItem("mh-theme");if(t==="light"||t==="dark"){document.documentElement.setAttribute("data-theme",t);}}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/css/style.css?v=9">
+<link rel="stylesheet" href="assets/css/cinematic.css?v=4">
+<script>(function(){try{var t=localStorage.getItem("mh-theme");document.documentElement.setAttribute("data-theme",t==="light"?"light":"dark");}catch(e){}})();</script>
 </head>
 <body>
 
@@ -17,7 +18,6 @@
   <span class="bg-blob bg-blob-b"></span>
   <div class="bg-network"></div>
 </div>
-<div class="cursor-ring" aria-hidden="true"></div>
 
 <header class="site-nav">
   <div class="container nav-inner">
@@ -54,7 +54,10 @@
 
   <section class="hero container">
     <div>
-      <span class="hero-label mono hero-fade" data-hero-reveal>Mayank Hooda</span>
+      <div class="hero-id hero-fade" data-hero-reveal>
+        <img src="assets/img/mayank.jpg" alt="Mayank Hooda" width="56" height="56" onerror="this.hidden=true">
+        <div><strong>Mayank Hooda</strong><span class="mono">SOC Engineer, TechBridge</span></div>
+      </div>
       <h1 class="hero-fade" data-hero-reveal>SOC Engineer for infrastructure that can't go down.</h1>
       <p class="lede hero-fade" data-hero-reveal>Wazuh detection engineering, PAM, and automated failover for critical government infrastructure, backed by real repositories you can open right now.</p>
       <div class="cta-row hero-fade" data-hero-reveal>
@@ -68,30 +71,13 @@
         </a>
       </div>
     </div>
-    <div class="hero-art">
-      <div class="panel hero-tile" data-hero-reveal>
-        <span class="icon" style="--icon-url:url('../icons/shield-check.svg')" aria-hidden="true"></span>
-        <span class="tile-label">SIEM &amp; Detection</span>
-      </div>
-      <div class="panel hero-tile" data-hero-reveal>
-        <span class="icon" style="--icon-url:url('../icons/lock-key.svg')" aria-hidden="true"></span>
-        <span class="tile-label">PAM &amp; Access</span>
-      </div>
-      <div class="panel hero-tile hero-tile-wide" data-hero-reveal>
-        <span class="icon" style="--icon-url:url('../icons/database.svg')" aria-hidden="true"></span>
-        <div class="tile-copy">
-          <span class="tile-label">PostgreSQL HA / DR</span>
-          <small>Self-healing failover, split-brain prevention</small>
-        </div>
-      </div>
-    </div>
   </section>
 
   <section class="section-tight container">
     <div class="stats">
       <div class="panel stat" data-reveal>
-        <strong data-count="8">0</strong>
-        <span>Sites deployed (3 physical, 5 remote)</span>
+        <strong data-count="11">0</strong>
+        <span>Sites deployed (5 physical, 6 remote)</span>
       </div>
       <div class="panel stat" data-reveal>
         <strong>80-100+</strong>
@@ -253,6 +239,6 @@
 </footer>
 
 <script src="assets/js/projects-data.js?v=7"></script>
-<script src="assets/js/main.js?v=12"></script>
+<script src="assets/js/main.js?v=13"></script>
 </body>
 </html>
